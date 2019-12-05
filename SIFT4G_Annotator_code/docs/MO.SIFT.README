@@ -1,0 +1,39 @@
+MO.SIFT: A tool for predicting the effect of amino acid changes to protein functionality.
+Version 6.0
+
+
+INSTALLATION
+------------
+1. Ensure that Java 1.6 is installed. If Java 1.6. is not installed, please
+   a. Obtain java installer from Oracle (http://www.oracle.com/technetwork/java/javase/downloads/index.html) and follow the installation instructions provided, or
+   b. Approach your organization's Systems Administrator for assistance.
+2. Copy SIFT.jar file to a directory of your choice (in this document, the directory will be known as <SIFT DIR>
+3. Download the SIFT database for the organism of interest from BGI's Gigascience database repository. 
+4. The database is in the form of a gzip file. Unzip the file using WinZip (if you are using Windows), or gzip if you are using Linux.
+   (In this document, the directory of the SIFT database will be referred to as <SIFT DB DIR>
+
+
+RUNNING SIFT ON COMMAND LINE
+----------------------------
+1. To run SIFT on the command line, you need to provide the following arguments
+   -i Path to your input file (in VCF or SIFT format)
+   -r Directory or folder where you want to (please provide the full path. Eg. /home/user/sift_output and not just sift_output)
+   -o Name of the file you want the output to be written to. 
+   -d Directory of your SIFT database
+2. Optional arguments you may provide include:
+   -p Threshold for prediction (between 0.0 and 1.0), any SIFT score equal to or less than this value is predicted damaging (default is set at 0.05).
+3. Run SIFT using the following command:
+   java -jar SIFT.jar -h -i <input file path> -d <SIFT DB DIR> -r <Directory to write to> -o <Name of output file>
+
+
+RUNNING SIFT ON A GRAPHICAL USER INTERFACE
+------------------------------------------
+MO.SIFT can be run on a computer with graphical user interface. In most cases, simply double-click on the SIFT.jar file to launch the SIFT program.
+If double-clicking the jar file does not work, try running the following command:
+   C:\>java -Xms512m -Xmx1024 -jar SIFT.jar
+
+
+
+
+
+
