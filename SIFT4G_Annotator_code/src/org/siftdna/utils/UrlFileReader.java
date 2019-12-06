@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.*;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +21,11 @@ public class UrlFileReader {
 	public String FileReader(String link){
 		try{
 			URL url = new URL(link);
-			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+			URLConnection urlc = url.openConnection();
+		    urlc.setRequestProperty("User-Agent", "Mozilla 5.0 (Windows; U; "
+		            + "Windows NT 5.1; en-US; rv:1.8.0.11) ");
+	//	    InputStream in = urlc.getInputStream();
+			BufferedReader in = new BufferedReader(new InputStreamReader(urlc.getInputStream()));
 			String line;
 			contentList = new ArrayList<String>();
 			while((line = in.readLine()) != null){
@@ -33,6 +39,7 @@ public class UrlFileReader {
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			System.out.println (e);
 			content = "NoInternet";
 		}
 		return content;

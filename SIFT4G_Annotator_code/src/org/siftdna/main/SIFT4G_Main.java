@@ -50,6 +50,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.Document;
 
 import org.apache.commons.cli.CommandLine;
@@ -172,13 +173,15 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 			}
 			// Let's create the output directory if it doesn't exist
 			// Announcements should be shown here. 
-			urlRead = new UrlFileReader();
+		/*	urlRead = new UrlFileReader();
 			contentText = urlRead.FileReader(SIFTConstants.SIFTDB_ANNOUNCEMENT);
+			System.out.println (contentText);
 			if(contentText.equalsIgnoreCase("NA")){
 				contentText = "Cannot read latest announcements from server !!!";
 			}
 			else if(contentText.equalsIgnoreCase("NoInternet")){
-				contentText = "Cannot connect to network"+"\t"+"Please check your internet connection !!!!";
+				contentText = "Error 182: Cannot connect to network"+ SIFTConstants.SIFTDB_ANNOUNCEMENT + 
+								"\t"+"Please check your internet connection !!!!";
 			}
 			else if(contentText.isEmpty()){
 				contentText = "No updates from server!!";
@@ -188,8 +191,8 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 			Matcher m = r.matcher(contentText);
 			if(m.find())
 				contentText = m.group(1);
-			contentText = contentText + " Please go to http:sift-dna.org for updates.";
-			System.out.println("Updates:"+"\n"+contentText);
+			contentText = contentText + " Please go to https//:sift-dna.org for updates.";
+			System.out.println("Updates:"+"\n"+contentText);*/
 			System.out.println("\n"+"Started Running .......");
 			cmdoutDir = new File(outputDir);
 			if(isMultiTranscripts){
@@ -344,8 +347,8 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 		createStartButton();
 		inputInfoPanel.add(startButton, BorderLayout.EAST);
 		OuterPanel.add(inputInfoPanel, BorderLayout.CENTER);
-		announcementPanel = getAnnouncementPanel();
-		OuterPanel.add(announcementPanel, BorderLayout.SOUTH);
+//		announcementPanel = getAnnouncementPanel();
+//		OuterPanel.add(announcementPanel, BorderLayout.SOUTH);
 		startButton.setEnabled(false);
 
 		mainFrame.getContentPane().add(OuterPanel, BorderLayout.NORTH);
@@ -404,13 +407,17 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 		};
 		
 	    urlRead = new UrlFileReader();
+	    //contentText = urlRead.FileReader(SIFTConstants.SIFTDB_ANNOUNCEMENT);
+	   // System.out.println (SIFTConstants.SIFTDB_ANNOUNCEMENT);
 	    contentText = urlRead.FileReader(SIFTConstants.SIFTDB_ANNOUNCEMENT);
+	    System.out.println (contentText);
 	    if(contentText=="NA"){
 	    	contentText = "Cannot read latest announcements from server !!!";
 	    	editorpane.removeMouseListener(l);
 	    }
 	    else if (contentText=="NoInternet") {
-	    	contentText = "Cannot connect to network"+"\t"+"Please check your internet connection !!!!";
+	    	contentText = "Error 416: Cannot connect to network to get "+
+	    			SIFTConstants.SIFTDB_ANNOUNCEMENT +  "\t"+"Please check your internet connection !!!!";
 	    	editorpane.removeMouseListener(l);
 		}
 	    else if(contentText.isEmpty()){
@@ -575,7 +582,7 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 		boolean state = (queryTx.getText().length() > 0)
 				&& (dbTx.getText().length() > 0);
 		startButton.setEnabled(state);
-		announcementPanel.setVisible(false);;
+//		announcementPanel.setVisible(false);;
 	}
 
 	private static JPanel getHelpPanel(){
@@ -629,8 +636,9 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 		dhelp.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				JOptionPane.showMessageDialog(null, "<html><body><p style='width: 250px;'>Select 'Click here to download SIFT 4G databases' to download and upload a database.</p><br></br>"
-						+ "<html><body><p style='width: 250px;'> Databases will be stored in the folder \"SIFT4G/databases\" located in the user's home directory.</p></body></html>", null, JOptionPane.PLAIN_MESSAGE);
+				JOptionPane.showMessageDialog(null, "<html><body><p style='width: 250px;'>Download your SIFT 4G database locally and then browse to the folder.</p><br></br>"
+						+ "<html><body><p style='width: 250px;'>" + 
+						"The folder should contain the following files: &lt;id&gt;.gz and &lt;id&gt;.regions  where id refers to a chromosome, scaffold, or contig id.</p></body></html>", null, JOptionPane.PLAIN_MESSAGE);
 			}
 		});
 		hpanel.add(qhelp,BorderLayout.NORTH);
@@ -640,96 +648,59 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 	}
 
 	private static JPanel getDatabasePanel() throws IOException {
-		//
-
 		JPanel panel = new JPanel(new BorderLayout());
 
-		JLabel label = new JLabel("Database: ");
+		JLabel inputFileLabel = new JLabel("Database: ");
 
 		dbTx = new JTextField();
 		dbTx.setEditable(false);
-		genome = new GenomeListItem();
-		final String path = getDatabaseDir();
-		final List<GenomeListItem> ServerGenomes = genome.getServerGenomeList();
-		final Object [] downloaded_genomes = genome.list_downloaded(path);
-		final JComboBox cb = new JComboBox();
-		cb.setModel(getComboBoxModel(downloaded_genomes));
-		cb.setVisible(true);
-		cb.setSelectedItem(null);
-		cb.addActionListener(new ActionListener() {
-			@SuppressWarnings({ "unchecked", "rawtypes" })
+
+		Document textFieldDoc = dbTx.getDocument();
+		textFieldDoc.addDocumentListener(new DocumentListener() {
+			public void changedUpdate(DocumentEvent e) {
+				updated(e);
+			}
+
+			public void insertUpdate(DocumentEvent e) {
+				updated(e);
+			}
+
+			public void removeUpdate(DocumentEvent e) {
+				updated(e);
+			}
+
+			private void updated(DocumentEvent e) {
+				checkButtonState();
+			}
+		});
+
+		final JFileChooser fc = new JFileChooser();
+		JButton openButton = new JButton("Browse for Folder", null);
+		openButton.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				JComboBox cb = (JComboBox) e.getSource();
-				String db = (String) cb.getSelectedItem();
-				if (db.equalsIgnoreCase("Select database to download")){
-					GenomeSelection genomeSelection = new GenomeSelection(mainFrame,ServerGenomes,ListSelectionModel.SINGLE_SELECTION);
-					genomeSelection.setVisible(true);
-					List <GenomeListItem> selectedGenome = null;
-					String selGenome = null;
-					boolean check = true;
-					if(genomeSelection.getSelectedValuesList() == null){
-						check = false;
-						cb.setSelectedIndex(0);
-						dbTx.setText(null);
-						checkButtonState();
-					}
-					else{
-						selectedGenome = genomeSelection.getSelectedValuesList();
-						selGenome = selectedGenome.get(0).getDisplayableName();
-						boolean b = genome.hasDownloaded(selGenome)? true : false ;
-						if(b){
-							int output = JOptionPane.showConfirmDialog(mainFrame
-									,selectedGenome.get(0).getDisplayableName() + " is already Downloaded. Do you still want to proceed?"
-									,"WARNING"
-									,JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
-							if(output == JOptionPane.YES_OPTION || output == JOptionPane.CANCEL_OPTION){
-								check = true;
-							}
-							else if(output == JOptionPane.NO_OPTION){
-								check = false;
-								dbTx.setText(genome.get_local_path(selGenome) + File.separator + selectedGenome.get(0).getFileName());
-								cb.setSelectedItem(selGenome);
-								checkButtonState();
-							}
-						}
-					}
-					if(selectedGenome!=null && selectedGenome.size()>=1 && check){
-						//final JFrame downloadFrame = new JFrame();
-						SwingFileDownloadHTTP swingFile = new SwingFileDownloadHTTP(mainFrame, selectedGenome.get(0).getLocation(), path);
-						swingFile.setVisible(true);
-						if(!swingFile.isInterupted()){
-							String DbName = selectedGenome.get(0).getDisplayableName();
-							cb.setModel(getComboBoxModel(genome.list_downloaded(path)));
-							cb.setSelectedItem(DbName);
-							File newPath = new File(path + File.separator + selectedGenome.get(0).getFileName() + File.separator + selectedGenome.get(0).getFileName());
-							dbTx.setText(newPath.getAbsolutePath());
-							checkButtonState();
-							swingFile.dispose();
-						}
-						else{
-							cb.setSelectedIndex(0);
-							dbTx.setText(null);
-							checkButtonState();
-						}
-					}
-				}
-				else if(!db.equalsIgnoreCase("Select Databases")){
-					File f = new File(genome.get_local_path(db)+ System.getProperty("file.separator") + genome.get_local_fileName(db));
-					dbTx.setText(f.getAbsolutePath());
-					checkButtonState();
-				}
-				else if(db.equalsIgnoreCase("Select Databases")){
-					dbTx.setText(null);
-					checkButtonState();
+			public void actionPerformed(ActionEvent arg0) {
+				fc.setCurrentDirectory(new java.io.File("."));
+	            fc.setDialogTitle("Browse the folder containing SIFT4G database");
+	            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+	            fc.setAcceptAllFileFilterUsed(false);
+	            
+				int returnVal = fc.showOpenDialog(mainFrame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					String path = file.getAbsolutePath();
+					dbTx.setText(path);
 				}
 			}
 		});
 
-		panel.add(label, BorderLayout.WEST);
-		panel.add(cb, BorderLayout.CENTER);
+		panel.add(inputFileLabel, BorderLayout.WEST);
+		panel.add(dbTx, BorderLayout.CENTER);
+		panel.add(openButton, BorderLayout.EAST);
+
+
 		return panel;
 	}
+
 
 	@SuppressWarnings("unchecked")
 	private static ComboBoxModel getComboBoxModel(
@@ -848,7 +819,7 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 
 		queryTx = new JTextField();
 		queryTx.setEditable(false);
-
+/*
 		Document textFieldDoc = queryTx.getDocument();
 		textFieldDoc.addDocumentListener(new DocumentListener() {
 			public void changedUpdate(DocumentEvent e) {
@@ -866,13 +837,16 @@ public class SIFT4G_Main implements ActionListener, Runnable {
 			private void updated(DocumentEvent e) {
 				checkButtonState();
 			}
-		});
+		});*/
 
 		final JFileChooser fc = new JFileChooser();
+		
 		JButton openButton = new JButton("Select a VCF file", null);
 		openButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				//FileNameExtensionFilter filter = new FileNameExtensionFilter("vcf");
+				//fc.setFileFilter(filter);
 				int returnVal = fc.showOpenDialog(mainFrame);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
